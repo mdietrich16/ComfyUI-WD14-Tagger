@@ -106,41 +106,6 @@ def is_junction(path):
     except OSError:
         return False
 
-def install_js():
-    src_dir = get_ext_dir("web/js")
-    if not os.path.exists(src_dir):
-        log("No JS")
-        return
-
-    should_install = should_install_js()
-    if should_install:
-        log("it looks like you're running an old version of ComfyUI that requires manual setup of web files, it is recommended you update your installation.", "warning", True)
-    dst_dir = get_web_ext_dir()
-    linked = os.path.islink(dst_dir) or is_junction(dst_dir)
-    if linked or os.path.exists(dst_dir):
-        if linked:
-            if should_install:
-                log("JS already linked")
-            else:
-                os.unlink(dst_dir)
-                log("JS unlinked, PromptServer will serve extension")
-        elif not should_install:
-            shutil.rmtree(dst_dir)
-            log("JS deleted, PromptServer will serve extension")
-        return
-    
-    if not should_install:
-        log("JS skipped, PromptServer will serve extension")
-        return
-    
-    if link_js(src_dir, dst_dir):
-        log("JS linked")
-        return
-
-    log("Copying JS files")
-    shutil.copytree(src_dir, dst_dir, dirs_exist_ok=True)
-
-
 def should_install_js():
     return not hasattr(PromptServer.instance, "supports") or "custom_nodes_from_web" not in PromptServer.instance.supports
 
@@ -156,7 +121,10 @@ def init(check_imports):
                 log(f"{imp} is required, please check requirements are installed.", type="ERROR", always=True)
                 return False
 
-    install_js()
+    should_install = should_install_js()
+    if should_install:
+        log("it looks like you're running an old version of ComfyUI that requires manual setup of web files, it is recommended you update your installation.", "warning", True)
+        return False
     return True
 
 
